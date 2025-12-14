@@ -1,16 +1,6 @@
-from vllm import LLM, SamplingParams
-from transformers import AutoTokenizer
-import torch
-import json
+from typing import List, Dict
 import pandas as pd
-from typing import List, Dict, Tuple
-from collections import Counter
-import random
-from tqdm import tqdm
-import re
-import argparse
 import os
-import sys
 import time
 
 
@@ -70,12 +60,12 @@ class FEVEREvaluator:
                 elapsed = time.time() - start_time
                 accuracy = sum(r['correct'] for r in results) / len(results) * 100
                 
-                print(f"   Completed in {elapsed:.1f}s")
+                print(f"  Completed in {elapsed:.1f}s")
                 print(f"  Accuracy: {accuracy:.2f}%")
                 print(f"  Time per example: {elapsed/len(results):.2f}s")
                 
             except Exception as e:
-                print(f"  ✗ Error in {method}: {e}")
+                print(f"  Error in {method}: {e}")
                 import traceback
                 traceback.print_exc()
         

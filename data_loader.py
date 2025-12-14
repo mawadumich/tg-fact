@@ -1,17 +1,6 @@
-from vllm import LLM, SamplingParams
-from transformers import AutoTokenizer
-import torch
 import json
 import pandas as pd
-from typing import List, Dict, Tuple
-from collections import Counter
-import random
-from tqdm import tqdm
-import re
-import argparse
-import os
-import sys
-import time
+
 
 def load_fever_dataset(filepath, sample_size=None, verifiable_only=False) -> pd.DataFrame:
     data = []

@@ -2,17 +2,11 @@
 from vllm import LLM, SamplingParams
 from transformers import AutoTokenizer
 import torch
-import json
-import pandas as pd
 from typing import List, Dict, Tuple
 from collections import Counter
 import random
 from tqdm import tqdm
 import re
-import argparse
-import os
-import sys
-import time
 
 class FEVERFactCheckerVLLM:
     def __init__(self, model_name="meta-llama/Meta-Llama-3.1-8B-Instruct", 
@@ -55,10 +49,9 @@ class FEVERFactCheckerVLLM:
         self.llm = LLM(**llm_kwargs)
         
         self.model_name = model_name
-        print(" Model and tokenizer loaded successfully!")
+        print("Model and tokenizer loaded successfully!")
 
     def _format_prompt(self, user_message: str, system_message: str = None) -> str:
-        """Format prompt using tokenizer's chat template"""
         if system_message is None:
             system_message = "You are a precise fact-checking assistant. You must analyze claims carefully."
         
@@ -77,7 +70,6 @@ class FEVERFactCheckerVLLM:
         return formatted
     
     def _format_evidence(self, evidence_raw):
-        """Convert raw FEVER evidence to Wikipedia URLs"""
         if not evidence_raw or evidence_raw == "No evidence provided.":
             return "No evidence provided."
         
@@ -102,7 +94,6 @@ class FEVERFactCheckerVLLM:
         return "No evidence provided."
             
     def random_baseline(self, claims, evidences_raw) -> List[Dict]:
-        """Random baseline for comparison"""
         results = []
         for _, _ in zip(claims, evidences_raw):
             label = random.choice(['SUPPORTS', 'REFUTES', 'NOT ENOUGH INFO'])
@@ -114,12 +105,11 @@ class FEVERFactCheckerVLLM:
         return results
     
     def chain_of_thought(self, claims, evidences_raw, chunk_size=32) -> List[Dict]:
-        """Chain-of-Thought with chunked processing"""
         few_shot_examples = """Example 1:
-Claim: Albert Einstein failed mathematics as a student.
-Reasoning: This is a common myth, so I would think about biographical information on Einstein or imagine searching for details about his school performance. Reputable sources consistently note that Einstein excelled in mathematics at a young age, which contradicts the claim. The answer is REFUTES.
+                                Claim: Albert Einstein failed mathematics as a student.
+                                Reasoning: This is a common myth, so I would think about biographical information on Einstein or imagine searching for details about his school performance. Reputable sources consistently note that Einstein excelled in mathematics at a young age, which contradicts the claim. The answer is REFUTES.
 
-Now evaluate this claim:"""
+                                Now evaluate this claim:"""
 
         all_results = []
         
@@ -132,11 +122,11 @@ Now evaluate this claim:"""
             for claim in chunk_claims:
                 prompt_text = f"""{few_shot_examples}
 
-Claim: {claim}
+                                Claim: {claim}
 
-Think step by step about whether this claim is SUPPORTS, REFUTES, or NOT ENOUGH INFO.
+                                Think step by step about whether this claim is SUPPORTS, REFUTES, or NOT ENOUGH INFO.
 
-Reasoning:"""
+                                Reasoning:"""
                 
                 prompts.append(self._format_prompt(prompt_text))
 
@@ -163,12 +153,11 @@ Reasoning:"""
         return all_results
     
     def self_consistency_cot(self, claims, evidences_raw, n_samples=5, chunk_size=10) -> List[Dict]:
-        """Self-Consistency with chunked processing"""
         few_shot_examples = """Example 1:
-Claim: Albert Einstein failed mathematics as a student.
-Reasoning: This is a common myth, so I would think about biographical information on Einstein or imagine searching for details about his school performance. Reputable sources consistently note that Einstein excelled in mathematics at a young age, which contradicts the claim. The answer is REFUTES.
+                                Claim: Albert Einstein failed mathematics as a student.
+                                Reasoning: This is a common myth, so I would think about biographical information on Einstein or imagine searching for details about his school performance. Reputable sources consistently note that Einstein excelled in mathematics at a young age, which contradicts the claim. The answer is REFUTES.
 
-Now evaluate this claim:"""
+                                Now evaluate this claim:"""
 
         all_results = []
 
@@ -183,12 +172,12 @@ Now evaluate this claim:"""
             for claim_idx, claim in enumerate(chunk_claims):
                 prompt_text = f"""{few_shot_examples}
 
-Claim: {claim}
+                                    Claim: {claim}
 
-Think step by step and explain your reasoning in a concise paragraph, then provide your final verdict as SUPPORTS, REFUTES, or NOT ENOUGH INFO.
+                                    Think step by step and explain your reasoning in a concise paragraph, then provide your final verdict as SUPPORTS, REFUTES, or NOT ENOUGH INFO.
 
-Your response:"""
-                
+                                    Your response:"""
+                                                    
                 formatted = self._format_prompt(prompt_text)
                 
                 
@@ -239,7 +228,6 @@ Your response:"""
         return all_results
 
     def tree_of_thoughts(self, claims, evidences_raw, depth=3, branches=3, min_confidence_threshold=0.3) -> List[Dict]:
-        """Tree-of-Thoughts (sequential - inherently difficult to batch)"""
         all_results = []
         
         for claim in tqdm(claims, desc="Tree-of-Thoughts"):
@@ -248,7 +236,6 @@ Your response:"""
         return all_results
     
     def _tot_single_example(self, claim, depth, branches, min_confidence_threshold=0.3) -> Dict:
-        """Generate and evaluate reasoning tree for single claim"""
         root_prompt = f"""You are fact-checking this claim using your knowledge:
 
                         Claim: {claim}
@@ -291,7 +278,6 @@ Your response:"""
         }
     
     def _expand_branch(self, claim, current_reasoning, remaining_depth, branches, min_confidence_threshold=0.3) -> Tuple[List[str], str, float]:
-        """Recursively expand reasoning tree with confidence-based pruning"""
         
         if remaining_depth == 0:
             
@@ -325,15 +311,15 @@ Your response:"""
         
         expand_prompt = f"""Continue this reasoning chain:
 
-    Claim: {claim}
-    Current reasoning: {current_reasoning}
+                            Claim: {claim}
+                            Current reasoning: {current_reasoning}
 
-    Generate {branches} different next reasoning steps that build on the current reasoning.
+                            Generate {branches} different next reasoning steps that build on the current reasoning.
 
-    Format EXACTLY as:
-    STEP 1: [one sentence]
-    STEP 2: [one sentence]  
-    STEP 3: [one sentence]"""
+                            Format EXACTLY as:
+                            STEP 1: [one sentence]
+                            STEP 2: [one sentence]  
+                            STEP 3: [one sentence]"""
 
         formatted_prompt = self._format_prompt(expand_prompt)
         
@@ -378,7 +364,6 @@ Your response:"""
         return best_continuation, best_label, best_score
 
     def _extract_label(self, text) -> str:
-        """Extract label with improved logic"""
         text_upper = text.upper()
         
         verdict_match = re.search(r'VERDICT:\s*(SUPPORTS|REFUTES|NOT ENOUGH INFO)', text_upper)
@@ -399,7 +384,6 @@ Your response:"""
         return 'NOT ENOUGH INFO'  
     
     def _extract_confidence(self, text) -> float:
-        """Extract confidence score"""
         match = re.search(r'CONFIDENCE:\s*([\d.]+)', text, re.IGNORECASE)
         if match:
             try:
@@ -410,7 +394,6 @@ Your response:"""
         return 0.5 
     
     def _parse_approaches(self, text, n) -> List[str]:
-        """Parse numbered approaches/steps from text"""
         approaches = []
         
         patterns = [

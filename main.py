@@ -1,9 +1,6 @@
-import json
-import pandas as pd
 import argparse
 import os
 import sys
-import time
 from data_loader import load_fever_dataset
 from fact_checker_vllm import FEVERFactCheckerVLLM
 from fever_evaluator import FEVEREvaluator
@@ -60,7 +57,7 @@ def main():
     print("="*70)
     
     if not os.path.exists(args.data_path):
-        print(f"\n✗ Error: Data file not found at {args.data_path}")
+        print(f"\nError: Data file not found at {args.data_path}")
         sys.exit(1)
     
     print("\n[1/4] Loading model...")
