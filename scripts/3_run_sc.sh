@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# ======================================== m 
-# Add self-consistency with 5 samples
-# ============================================================================
 echo "=== Self-Consistency evaluation ==="
 python main.py \
     --sample_size 100 \

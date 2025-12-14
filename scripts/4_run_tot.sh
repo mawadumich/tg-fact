@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 echo "=== Full evaluation with ToT ==="
 python main.py \
     --sample_size 100 \

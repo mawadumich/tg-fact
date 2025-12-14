@@ -1,9 +1,6 @@
 #!/bin/bash
 
-# ============================================================================
-# Chain-of-Thought
-# ============================================================================
-echo "=== Baseline evaluation ==="
+echo "=== Chain-of-Thought evaluation ==="
 python main.py \
     --sample_size 100 \
     --data_path ./data/paper_dev.jsonl \
