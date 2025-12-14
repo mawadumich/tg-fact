@@ -1,17 +1,16 @@
 #!/bin/bash
 
 # ============================================================================
-# Chain-of-Thought on 1000 examples
+# Chain-of-Thought
 # ============================================================================
-echo "=== PHASE 2: Baseline evaluation (1000 examples) ==="
+echo "=== Baseline evaluation ==="
 python main.py \
-    --sample_size 10 \
+    --sample_size 100 \
+    --data_path ./data/paper_dev.jsonl \
+    --model meta-llama/Meta-Llama-3.1-8B-Instruct \
     --methods cot \
-    --batch_size 128 \
+    --chunk_size 64 \
     --gpu_memory 0.95 \
+    --cache_dir ./model_cache \
+    --verifiable_only \
     --output_dir ./results/baseline
-
-# Expected results:
-# - Random: ~33% accuracy
-# - CoT: 55-65% accuracy
-# - Time: ~20-30 minutes

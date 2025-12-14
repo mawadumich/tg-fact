@@ -1,8 +1,6 @@
 venv/
 .venv/
-data/
 images/
-results/
 notebooks/
 __pycache__/
 *.txt

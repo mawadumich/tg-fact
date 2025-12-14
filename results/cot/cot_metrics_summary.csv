@@ -1,0 +1,2 @@
+Method,Accuracy,SUPPORTS_acc,REFUTES_acc,pred_SUPPORTS_pct,pred_REFUTES_pct,pred_NOT ENOUGH INFO_pct,uncertain_rate,Num_Samples
+cot,67.0,72.73,60.0,48.0,33.0,19.0,19.0,100

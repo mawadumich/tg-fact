@@ -1,0 +1,2 @@
+Method,Accuracy,SUPPORTS_acc,REFUTES_acc,NOT ENOUGH INFO_acc,Num_Samples
+random,32.6,31.27,31.06,35.4,1000

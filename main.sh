@@ -16,10 +16,10 @@
 
 source ~/.bashrc            
 conda activate eecs595
-
+export HF_TOKEN="<Hugging_Face_token"
 
 echo "Started on $(hostname) at $(date)"
 
-bash 2_run_baseline.sh
+bash ./scripts/4_run_tot.sh
 
 echo "Job finished at $(date)"
